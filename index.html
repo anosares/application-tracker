@@ -359,6 +359,15 @@
   }
   @keyframes nudge { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
+  /* Temporarily-locked state for Reset All — see btnResetAll in HTML/JS below */
+  .btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--danger-tint);
+    color: var(--text-faint);
+  }
+  .btn-danger:disabled:hover { background: var(--danger-tint); color: var(--text-faint); }
+
   .manage-hint {
     font-size: 12.5px;
     color: var(--text-faint);
@@ -977,8 +986,11 @@
 
     <div class="manage-section">
       <div class="manage-section-label">Reset all</div>
-      <button class="btn-danger" id="btnResetAll" type="button">Reset all applications</button>
-      <div class="manage-hint" id="resetHint">This permanently deletes every Applied, Interviewed, and Hired entry.</div>
+      <!-- Temporarily disabled to prevent accidental taps. Remove the `disabled`
+           attribute below (and see the matching note in the <script> section)
+           to re-enable. -->
+      <button class="btn-danger" id="btnResetAll" type="button" disabled>Reset all applications</button>
+      <div class="manage-hint" id="resetHint">This is temporarily locked to prevent accidental deletion.</div>
     </div>
 
     <div class="divider"></div>
@@ -1662,13 +1674,20 @@
   var pendingDeleteId = null;
   var MANAGE_VISIBLE_LIMIT = 5;
 
+  // Reset All is temporarily locked (see `disabled` on btnResetAll in the HTML
+  // above). Set this to true to restore the normal enable/disable-by-count
+  // behavior once you're ready to re-enable the button.
+  var RESET_ALL_LOCKED = true;
+
   function resetConfirmState(confirming) {
     resetConfirming = confirming;
     btnResetAll.classList.toggle("confirming", confirming);
     btnResetAll.textContent = confirming ? "Tap again to delete everything" : "Reset all applications";
     resetHint.textContent = confirming
       ? "This can't be undone. Tap the button again within 5 seconds to confirm."
-      : "This permanently deletes every Applied, Interviewed, and Hired entry.";
+      : (RESET_ALL_LOCKED
+          ? "This is temporarily locked to prevent accidental deletion."
+          : "This permanently deletes every Applied, Interviewed, and Hired entry.");
     clearTimeout(resetConfirmTimer);
     if (confirming) {
       resetConfirmTimer = setTimeout(function () { resetConfirmState(false); }, 5000);
@@ -1716,7 +1735,11 @@
     document.getElementById("tabCountInterviewed").textContent = byStatus("Interviewed").length;
     document.getElementById("tabCountHired").textContent = byStatus("Hired").length;
 
-    btnResetAll.disabled = apps.length === 0;
+    // Reset All stays disabled while locked, regardless of how many
+    // applications exist. Flip RESET_ALL_LOCKED to false above (and remove
+    // `disabled` from the button in the HTML) to restore the original
+    // "disabled only when there's nothing to reset" behavior.
+    btnResetAll.disabled = RESET_ALL_LOCKED ? true : apps.length === 0;
 
     var totalForTab = byStatus(manageActiveStatus).length;
     var ordered = byStatus(manageActiveStatus).slice().sort(function (a, b) { return dateForSort(b) - dateForSort(a); });
@@ -1765,6 +1788,7 @@
   });
 
   btnResetAll.addEventListener("click", async function () {
+    if (RESET_ALL_LOCKED) return; // safety net — button is also `disabled` in HTML
     if (!resetConfirming) {
       resetConfirmState(true);
       return;
@@ -1780,8 +1804,7 @@
       console.error(err);
       showToast("Unable to reset applications. Please try again.", "error");
     } finally {
-      //btnResetAll.disabled = apps.length === 0;
-      btnResetAll.disabled = true;
+      btnResetAll.disabled = apps.length === 0;
     }
   });
 
