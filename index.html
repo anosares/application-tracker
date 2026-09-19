@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Application Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    :root {
+      --bg: #F3F4F6;
+      --surface: #FFFFFF;
+      --surface-2: #FAFAFB;
+      --border: #E4E6EA;
+      --text: #16181D;
+      --text-muted: #6B7078;
+      --text-faint: #9AA0AA;
+
+      --applied: #4B5568;
+      --applied-tint: #EEF0F3;
+      --interviewed: #2F5FC4;
+      --interviewed-tint: #EBF1FD;
+      --hired: #1D8A5D;
+      --hired-tint: #E9F7EF;
+
+      --danger: #C4432F;
+      --danger-tint: #FBECE8;
+
+      --shadow-sm: 0 1px 2px rgba(16, 20, 30, 0.06);
+      --shadow-md: 0 8px 24px rgba(16, 20, 30, 0.10);
+      --shadow-lg: 0 20px 48px rgba(16, 20, 30, 0.22);
+
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+
+      color-scheme: light;
+    }
+
+    :root:not([data-theme="light"]) {
+      @media (prefers-color-scheme: dark) {
+        --bg: #101114;
+        --surface: #1A1C20;
+        --surface-2: #202329;
+        --border: #2C2F36;
+        --text: #F1F2F4;
+        --text-muted: #9BA0AA;
+        --text-faint: #6C7078;
+
+        --applied: #A9B0BE;
+        --applied-tint: #23262D;
+        --interviewed: #6C97EE;
+        --interviewed-tint: #1B2438;
+        --hired: #4FC98A;
+        --hired-tint: #142A20;
+
+        --danger: #E38672;
+        --danger-tint: #34211D;
+
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+        --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+        --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.6);
+        color-scheme: dark;
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #101114;
+      --surface: #1A1C20;
+      --surface-2: #202329;
+      --border: #2C2F36;
+      --text: #F1F2F4;
+      --text-muted: #9BA0AA;
+      --text-faint: #6C7078;
+
+      --applied: #A9B0BE;
+      --applied-tint: #23262D;
+      --interviewed: #6C97EE;
+      --interviewed-tint: #1B2438;
+      --hired: #4FC98A;
+      --hired-tint: #142A20;
+
+      --danger: #E38672;
+      --danger-tint: #34211D;
+
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+      --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.6);
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+    }
+
+    html {
+      scroll-padding-top: env(safe-area-inset-top, 0px);
+    }
+
+    body {
+      font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 460px;
+      margin: 0 auto;
+      padding: 32px 20px 140px;
+      min-height: 100%;
+      position: relative;
+    }
+
+    /* ---------- Header ---------- */
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand .kicker {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+    }
+
+    .brand h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      margin: 0;
+    }
+
+    .sync-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .sync-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-faint);
+      flex-shrink: 0;
+    }
+
+    .sync-pill[data-state="synced"] .sync-dot {
+      background: var(--hired);
+    }
+
+    .sync-pill[data-state="local"] .sync-dot {
+      background: #D6A32B;
+    }
+
+    .sync-pill[data-state="loading"] .sync-dot {
+      background: var(--interviewed);
+      animation: pulse 1.1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.35;
+      }
+    }
+
+    /* ---------- Stage cards ---------- */
+    .stages {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .stage-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .stage-main {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stage-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text-muted);
+    }
+
+    .stage-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .stage-card[data-stage="applied"] .stage-dot {
+      background: var(--applied);
+    }
+
+    .stage-card[data-stage="interviewed"] .stage-dot {
+      background: var(--interviewed);
+    }
+
+    .stage-card[data-stage="hired"] .stage-dot {
+      background: var(--hired);
+    }
+
+    .stage-count {
+      font-size: 40px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stage-card[data-stage="applied"] .stage-count {
+      color: var(--applied);
+    }
+
+    .stage-card[data-stage="interviewed"] .stage-count {
+      color: var(--interviewed);
+    }
+
+    .stage-card[data-stage="hired"] .stage-count {
+      color: var(--hired);
+    }
+
+    .mini-add {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+
+    .mini-add:active {
+      transform: scale(0.92);
+    }
+
+    .mini-add:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
+
+    .stage-card[data-stage="interviewed"] .mini-add {
+      background: var(--interviewed-tint);
+      color: var(--interviewed);
+    }
+
+    .stage-card[data-stage="hired"] .mini-add {
+      background: var(--hired-tint);
+      color: var(--hired);
+    }
+
+    .mini-add:hover {
+      filter: brightness(0.95);
+    }
+
+    /* ---------- Manage entries button (below Hired) ---------- */
+    .manage-row {
+      margin-top: 14px;
+    }
+
+    .manage-btn {
+      width: 100%;
+      border: 1.5px dashed var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 13px 16px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+    }
+
+    .manage-btn:hover {
+      color: var(--text);
+      border-color: var(--text-faint);
+      background: var(--surface-2);
+    }
+
+    .manage-btn:focus-visible {
+      outline: 2px solid var(--text-faint);
+      outline-offset: 2px;
+    }
+
+    /* ---------- Export link ---------- */
+    .export-row {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .export-btn {
+      border: none;
+      background: none;
+      color: var(--text-faint);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 8px 10px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .export-btn:hover {
+      color: var(--text-muted);
+      background: var(--surface);
+    }
+
+    .export-btn:focus-visible {
+      outline: 2px solid var(--text-faint);
+      outline-offset: 2px;
+    }
+
+    /* ---------- Manage modal: reset block ---------- */
+    .manage-section {
+      margin-bottom: 20px;
+    }
+
+    .manage-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .manage-section-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 10px;
+    }
+
+    .btn-danger {
+      width: 100%;
+      background: var(--danger-tint);
+      color: var(--danger);
+      border: 1.5px solid transparent;
+      font-family: inherit;
+      font-size: 14.5px;
+      font-weight: 700;
+      padding: 13px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-danger:active {
+      transform: scale(0.98);
+    }
+
+    .btn-danger:focus-visible {
+      outline: 2px solid var(--danger);
+      outline-offset: 2px;
+    }
+
+    .btn-danger.confirming {
+      background: var(--danger);
+      color: #fff;
+      animation: nudge 0.25s ease;
+    }
+
+    @keyframes nudge {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.02);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .manage-hint {
+      font-size: 12.5px;
+      color: var(--text-faint);
+      margin-top: 8px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    .manage-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .manage-entry {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 12px;
+    }
+
+    .entry-info {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .entry-role {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .entry-meta {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .status-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      letter-spacing: 0.01em;
+      flex-shrink: 0;
+    }
+
+    .status-pill[data-status="Applied"] {
+      background: var(--applied-tint);
+      color: var(--applied);
+    }
+
+    .status-pill[data-status="Interviewed"] {
+      background: var(--interviewed-tint);
+      color: var(--interviewed);
+    }
+
+    .status-pill[data-status="Hired"] {
+      background: var(--hired-tint);
+      color: var(--hired);
+    }
+
+    .entry-delete {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--text-faint);
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .entry-delete:hover {
+      background: var(--danger-tint);
+      color: var(--danger);
+    }
+
+    .entry-delete:focus-visible {
+      outline: 2px solid var(--danger);
+      outline-offset: 2px;
+    }
+
+    /* ---------- FAB ---------- */
+    .fab {
+      position: fixed;
+      left: 50%;
+      bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 40;
+      transition: transform 0.15s ease;
+    }
+
+    .fab:active {
+      transform: translateX(-50%) scale(0.94);
+    }
+
+    .fab:focus-visible {
+      outline: 2px solid var(--interviewed);
+      outline-offset: 3px;
+    }
+
+    /* ---------- Overlay / Modal ---------- */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 12, 16, 0.5);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      padding: 0;
+    }
+
+    .overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    @media (min-width: 640px) {
+      .overlay {
+        align-items: center;
+        padding: 20px;
+      }
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 440px;
+      max-height: min(88vh, 720px);
+      overflow-y: auto;
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      padding: 24px 22px calc(24px + env(safe-area-inset-bottom, 0px));
+      box-shadow: var(--shadow-lg);
+      transform: translateY(16px);
+      transition: transform 0.2s ease;
+    }
+
+    .overlay.open .modal {
+      transform: translateY(0);
+    }
+
+    @media (min-width: 640px) {
+      .modal {
+        border-radius: 22px;
+        padding: 26px 26px 26px;
+      }
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .modal-title {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .modal-title h2 {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .modal-title p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: var(--surface-2);
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .modal-close:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .modal-close:focus-visible {
+      outline: 2px solid var(--text-faint);
+      outline-offset: 2px;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .field:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 7px;
+    }
+
+    .field input[type="text"],
+    .field input[type="date"],
+    .field select {
+      width: 100%;
+      font-family: inherit;
+      font-size: 15px;
+      color: var(--text);
+      background: var(--surface-2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .field select {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7078' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      outline: none;
+      border-color: var(--interviewed);
+      background: var(--surface);
+    }
+
+    .field input::placeholder {
+      color: var(--text-faint);
+    }
+
+    .field-error {
+      font-size: 12.5px;
+      color: var(--danger);
+      margin-top: 6px;
+      font-weight: 600;
+      display: none;
+    }
+
+    .field.invalid input,
+    .field.invalid select {
+      border-color: var(--danger);
+      background: var(--danger-tint);
+    }
+
+    .field.invalid .field-error {
+      display: block;
+    }
+
+    .empty-note {
+      background: var(--surface-2);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      font-size: 13.5px;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .btn {
+      flex: 1;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 13px 18px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: filter 0.15s ease, transform 0.1s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--interviewed);
+      outline-offset: 2px;
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: var(--border);
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.12);
+    }
+
+    .btn-primary[data-tone="interviewed"] {
+      background: var(--interviewed);
+      color: #fff;
+    }
+
+    .btn-primary[data-tone="hired"] {
+      background: var(--hired);
+      color: #fff;
+    }
+
+    .spinner {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: currentColor;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    .btn.loading .spinner {
+      display: inline-block;
+    }
+
+    .btn.loading .btn-label {
+      opacity: 0.75;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ---------- Toast ---------- */
+    .toast-stack {
+      position: fixed;
+      top: calc(18px + env(safe-area-inset-top, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: calc(100% - 32px);
+      max-width: 420px;
+      align-items: center;
+    }
+
+    .toast {
+      width: 100%;
+      background: var(--text);
+      color: var(--bg);
+      padding: 13px 16px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      font-weight: 600;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast[data-kind="error"] {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .toast[data-kind="success"] {
+      background: var(--hired);
+      color: #fff;
+    }
+
+    .toast-icon {
+      flex-shrink: 0;
+      font-size: 15px;
+    }
+
+    /* ---------- Skeleton loading ---------- */
+    .skel {
+      background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 37%, var(--surface-2) 63%);
+      background-size: 400% 100%;
+      animation: shimmer 1.4s ease infinite;
+      border-radius: 8px;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 100% 0;
+      }
+
+      100% {
+        background-position: 0 0;
+      }
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="shell">
+    <div class="top">
+      <div class="brand">
+        <span class="kicker">Job search</span>
+        <h1>Application Tracker</h1>
+      </div>
+      <div class="sync-pill" id="syncPill" data-state="loading">
+        <span class="sync-dot"></span>
+        <span id="syncLabel">Loading</span>
+      </div>
+    </div>
+
+    <div class="stages">
+      <div class="stage-card" data-stage="applied">
+        <div class="stage-main">
+          <span class="stage-label"><span class="stage-dot"></span>Applied</span>
+          <span class="stage-count" id="count-applied">0</span>
+        </div>
+      </div>
+
+      <div class="stage-card" data-stage="interviewed">
+        <div class="stage-main">
+          <span class="stage-label"><span class="stage-dot"></span>Interviewed</span>
+          <span class="stage-count" id="count-interviewed">0</span>
+        </div>
+        <button class="mini-add" id="btnOpenInterview" aria-label="Move an application to interviewed">+</button>
+      </div>
+
+      <div class="stage-card" data-stage="hired">
+        <div class="stage-main">
+          <span class="stage-label"><span class="stage-dot"></span>Hired</span>
+          <span class="stage-count" id="count-hired">0</span>
+        </div>
+        <button class="mini-add" id="btnOpenHired" aria-label="Mark an application as hired">+</button>
+      </div>
+    </div>
+
+    <div class="manage-row">
+      <button class="manage-btn" id="btnOpenManage" type="button">🗑 Manage entries</button>
+    </div>
+
+    <div class="export-row">
+      <button class="export-btn" id="btnExport" type="button">⭳ Export as spreadsheet (.csv)</button>
+    </div>
+  </div>
+
+  <button class="fab" id="btnOpenAdd" aria-label="Add application">+</button>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <!-- ADD APPLICATION MODAL -->
+  <div class="overlay" id="overlayAdd" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">
+          <h2 id="addTitle">Add application</h2>
+          <p>Log a new role you've applied to.</p>
+        </div>
+        <button class="modal-close" data-close="overlayAdd" aria-label="Close">✕</button>
+      </div>
+      <form id="formAdd" novalidate>
+        <div class="field" id="field-role">
+          <label for="input-role">Role</label>
+          <input type="text" id="input-role" placeholder="e.g. WordPress Developer" autocomplete="off">
+          <div class="field-error">Enter the role you applied for.</div>
+        </div>
+        <div class="field" id="field-platform">
+          <label for="input-platform">Platform</label>
+          <select id="input-platform">
+            <option value="" disabled selected>Select a platform</option>
+            <option>OnlineJobsPH</option>
+            <option>Indeed</option>
+            <option>Upwork</option>
+            <option>Facebook</option>
+            <option>Instagram</option>
+            <option>Other</option>
+          </select>
+          <div class="field-error">Choose where you applied.</div>
+        </div>
+        <div class="field" id="field-platform-other" style="display:none;">
+          <label for="input-platform-other">Platform name</label>
+          <input type="text" id="input-platform-other" placeholder="Enter platform name" autocomplete="off">
+          <div class="field-error">Enter the platform name.</div>
+        </div>
+        <div class="field" id="field-applied-date">
+          <label for="input-applied-date">Applied date</label>
+          <input type="date" id="input-applied-date">
+          <div class="field-error">Select the date you applied.</div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close="overlayAdd">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitAdd">
+            <span class="spinner"></span><span class="btn-label">Add</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD INTERVIEW MODAL -->
+  <div class="overlay" id="overlayInterview" role="dialog" aria-modal="true" aria-labelledby="interviewTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">
+          <h2 id="interviewTitle">Move to interviewed</h2>
+          <p>Pick an applied role that's landed an interview.</p>
+        </div>
+        <button class="modal-close" data-close="overlayInterview" aria-label="Close">✕</button>
+      </div>
+      <div id="interviewEmpty" class="empty-note" style="display:none;">No Applied applications available.</div>
+      <form id="formInterview" novalidate>
+        <div class="field" id="field-int-platform">
+          <label for="input-int-platform">Platform</label>
+          <select id="input-int-platform">
+            <option value="" disabled selected>Select a platform</option>
+          </select>
+          <div class="field-error">Choose a platform.</div>
+        </div>
+        <div class="field" id="field-int-role">
+          <label for="input-int-role">Role</label>
+          <select id="input-int-role" disabled>
+            <option value="" disabled selected>Select a platform first</option>
+          </select>
+          <div class="field-error">Choose a role.</div>
+        </div>
+        <div class="field" id="field-int-date">
+          <label for="input-int-date">Interview date</label>
+          <input type="date" id="input-int-date">
+          <div class="field-error">Select the interview date.</div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close="overlayInterview">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-tone="interviewed" id="btnSubmitInterview">
+            <span class="spinner"></span><span class="btn-label">Interviewed →</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MARK HIRED MODAL -->
+  <div class="overlay" id="overlayHired" role="dialog" aria-modal="true" aria-labelledby="hiredTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">
+          <h2 id="hiredTitle">Mark as hired</h2>
+          <p>Pick an interviewed role that made an offer.</p>
+        </div>
+        <button class="modal-close" data-close="overlayHired" aria-label="Close">✕</button>
+      </div>
+      <div id="hiredEmpty" class="empty-note" style="display:none;">No Interviewed applications available.</div>
+      <form id="formHired" novalidate>
+        <div class="field" id="field-hired-platform">
+          <label for="input-hired-platform">Platform</label>
+          <select id="input-hired-platform">
+            <option value="" disabled selected>Select a platform</option>
+          </select>
+          <div class="field-error">Choose a platform.</div>
+        </div>
+        <div class="field" id="field-hired-role">
+          <label for="input-hired-role">Role</label>
+          <select id="input-hired-role" disabled>
+            <option value="" disabled selected>Select a platform first</option>
+          </select>
+          <div class="field-error">Choose a role.</div>
+        </div>
+        <div class="field" id="field-hired-date">
+          <label for="input-hired-date">Hired date</label>
+          <input type="date" id="input-hired-date">
+          <div class="field-error">Select the hired date.</div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close="overlayHired">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-tone="hired" id="btnSubmitHired">
+            <span class="spinner"></span><span class="btn-label">Hired →</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MANAGE ENTRIES MODAL -->
+  <div class="overlay" id="overlayManage" role="dialog" aria-modal="true" aria-labelledby="manageTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">
+          <h2 id="manageTitle">Manage entries</h2>
+          <p>Reset everything, or remove one application at a time.</p>
+        </div>
+        <button class="modal-close" data-close="overlayManage" aria-label="Close">✕</button>
+      </div>
+
+      <div class="manage-section">
+        <div class="manage-section-label">Reset all</div>
+        <button class="btn-danger" id="btnResetAll" type="button">Reset all applications</button>
+        <div class="manage-hint" id="resetHint">This permanently deletes every Applied, Interviewed, and Hired entry.
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="manage-section">
+        <div class="manage-section-label">Remove one by one</div>
+        <div id="manageEmpty" class="empty-note" style="display:none;">No applications yet.</div>
+        <div class="manage-list" id="manageList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      // ---------------------------------------------------------------
+      // CONFIG — paste your Supabase project values here.
+      // Settings > API in your Supabase project dashboard:
+      //   Project URL       -> SUPABASE_URL
+      //   anon public key   -> SUPABASE_ANON_KEY
+      // ---------------------------------------------------------------
+      var SUPABASE_URL = "https://ukrjwelpovrsmfedywhs.supabase.co/rest/v1/";
+      var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrcmp3ZWxwb3Zyc21mZWR5d2hzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4MzE3NzYsImV4cCI6MjEwNTQwNzc3Nn0.HUi9bqxrcMoa17Nm-PxzG0Bb7r8AWPxefX1h7p2GiHU";
+      var TABLE = "applications";
+
+      // ---------------------------------------------------------------
+      // Data layer: reads/writes a Supabase table directly from the
+      // browser (safe with the anon key + row-level-security policies —
+      // see supabase-schema.sql). Falls back to this browser's
+      // localStorage if Supabase isn't configured or unreachable, so the
+      // app still works, just without cross-device sync.
+      // ---------------------------------------------------------------
+      var apps = [];               // in-memory list, normalized to camelCase for the UI
+      var storeMode = "loading";   // "supabase" | "local"
+      var LOCAL_KEY = "ats_applications_v1";
+      var supabase = null;
+
+      function uid() {
+        return "app_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 9);
+      }
+
+      function isConfigured() {
+        return SUPABASE_URL && SUPABASE_ANON_KEY &&
+          SUPABASE_URL.indexOf("YOUR_SUPABASE") !== 0 &&
+          SUPABASE_ANON_KEY.indexOf("YOUR_SUPABASE") !== 0;
+      }
+
+      function fromRow(row) {
+        return {
+          id: row.id,
+          role: row.role,
+          platform: row.platform,
+          appliedDate: row.applied_date || "",
+          status: row.status,
+          interviewedDate: row.interviewed_date || "",
+          hiredDate: row.hired_date || "",
+          createdAt: row.created_at ? new Date(row.created_at).getTime() : 0
+        };
+      }
+
+      function toRow(payload) {
+        var row = {};
+        if ("role" in payload) row.role = payload.role;
+        if ("platform" in payload) row.platform = payload.platform;
+        if ("status" in payload) row.status = payload.status;
+        if ("appliedDate" in payload) row.applied_date = payload.appliedDate || null;
+        if ("interviewedDate" in payload) row.interviewed_date = payload.interviewedDate || null;
+        if ("hiredDate" in payload) row.hired_date = payload.hiredDate || null;
+        return row;
+      }
+
+      function loadLocal() {
+        try {
+          var raw = localStorage.getItem(LOCAL_KEY);
+          apps = raw ? JSON.parse(raw) : [];
+        } catch (e) {
+          apps = [];
+        }
+        render();
+      }
+
+      function saveLocal() {
+        try {
+          localStorage.setItem(LOCAL_KEY, JSON.stringify(apps));
+        } catch (e) { /* storage unavailable; state still lives in memory */ }
+      }
+
+      function setSyncState(state, label) {
+        var pill = document.getElementById("syncPill");
+        var lbl = document.getElementById("syncLabel");
+        pill.setAttribute("data-state", state);
+        lbl.textContent = label;
+      }
+
+      async function fetchAll() {
+        var res = await supabase.from(TABLE).select("*").order("created_at", { ascending: true });
+        if (res.error) throw res.error;
+        apps = (res.data || []).map(fromRow);
+        render();
+      }
+
+      async function initData() {
+        if (!isConfigured() || typeof window.supabase === "undefined") {
+          storeMode = "local";
+          setSyncState("local", "This device only");
+          loadLocal();
+          return;
+        }
+
+        try {
+          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          await fetchAll();
+          storeMode = "supabase";
+          setSyncState("synced", "Synced");
+
+          supabase
+            .channel("applications-changes")
+            .on("postgres_changes", { event: "*", schema: "public", table: TABLE }, function () {
+              fetchAll().catch(function (err) { console.error("refresh after change failed", err); });
+            })
+            .subscribe();
+        } catch (e) {
+          console.error("Supabase init failed, falling back to local storage", e);
+          storeMode = "local";
+          setSyncState("local", "Offline — this device only");
+          showToast("Couldn't reach the database. Working offline on this device.", "error");
+          loadLocal();
+        }
+      }
+
+      async function createApplication(payload) {
+        if (storeMode === "supabase" && supabase) {
+          var res = await supabase.from(TABLE).insert([toRow(payload)]);
+          if (res.error) throw res.error;
+          await fetchAll();
+        } else {
+          apps.push(Object.assign({ id: uid() }, payload));
+          saveLocal();
+          render();
+        }
+      }
+
+      async function updateApplication(id, patch) {
+        if (storeMode === "supabase" && supabase) {
+          var res = await supabase.from(TABLE).update(toRow(patch)).eq("id", id);
+          if (res.error) throw res.error;
+          await fetchAll();
+        } else {
+          var app = apps.find(function (a) { return a.id === id; });
+          if (app) Object.assign(app, patch);
+          saveLocal();
+          render();
+        }
+      }
+
+      async function deleteApplication(id) {
+        if (storeMode === "supabase" && supabase) {
+          var res = await supabase.from(TABLE).delete().eq("id", id);
+          if (res.error) throw res.error;
+          await fetchAll();
+        } else {
+          apps = apps.filter(function (a) { return a.id !== id; });
+          saveLocal();
+          render();
+        }
+      }
+
+      async function resetAllApplications() {
+        if (storeMode === "supabase" && supabase) {
+          var ids = apps.map(function (a) { return a.id; });
+          if (ids.length === 0) return;
+          var res = await supabase.from(TABLE).delete().in("id", ids);
+          if (res.error) throw res.error;
+          await fetchAll();
+        } else {
+          apps = [];
+          saveLocal();
+          render();
+        }
+      }
+
+      // ---------------------------------------------------------------
+      // Derived state
+      // ---------------------------------------------------------------
+      function byStatus(status) {
+        return apps.filter(function (a) { return a.status === status; });
+      }
+
+      function uniquePlatforms(list) {
+        var seen = [];
+        list.forEach(function (a) {
+          if (a.platform && seen.indexOf(a.platform) === -1) seen.push(a.platform);
+        });
+        return seen;
+      }
+
+      // ---------------------------------------------------------------
+      // Render
+      // ---------------------------------------------------------------
+      function render() {
+        document.getElementById("count-applied").textContent = byStatus("Applied").length;
+        document.getElementById("count-interviewed").textContent = byStatus("Interviewed").length;
+        document.getElementById("count-hired").textContent = byStatus("Hired").length;
+
+        var manageOverlay = document.getElementById("overlayManage");
+        if (manageOverlay && manageOverlay.classList.contains("open")) renderManageList();
+      }
+
+      // ---------------------------------------------------------------
+      // Toasts
+      // ---------------------------------------------------------------
+      function showToast(message, kind) {
+        var stack = document.getElementById("toastStack");
+        var el = document.createElement("div");
+        el.className = "toast";
+        el.setAttribute("data-kind", kind || "default");
+        var icon = kind === "success" ? "✓" : kind === "error" ? "!" : "•";
+        el.innerHTML = '<span class="toast-icon">' + icon + "</span><span>" + message + "</span>";
+        stack.appendChild(el);
+        requestAnimationFrame(function () { el.classList.add("show"); });
+        setTimeout(function () {
+          el.classList.remove("show");
+          setTimeout(function () { el.remove(); }, 250);
+        }, 3200);
+      }
+
+      // ---------------------------------------------------------------
+      // Modal open/close helpers
+      // ---------------------------------------------------------------
+      function openModal(id) {
+        var ov = document.getElementById(id);
+        ov.classList.add("open");
+        document.body.style.overflow = "hidden";
+        var firstField = ov.querySelector("input, select");
+        if (firstField) setTimeout(function () { firstField.focus(); }, 50);
+      }
+
+      function closeModal(id) {
+        var ov = document.getElementById(id);
+        ov.classList.remove("open");
+        document.body.style.overflow = "";
+      }
+
+      document.querySelectorAll("[data-close]").forEach(function (btn) {
+        btn.addEventListener("click", function () { closeModal(btn.getAttribute("data-close")); });
+      });
+
+      document.querySelectorAll(".overlay").forEach(function (ov) {
+        ov.addEventListener("click", function (e) {
+          if (e.target === ov) closeModal(ov.id);
+        });
+      });
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "Escape") return;
+        document.querySelectorAll(".overlay.open").forEach(function (ov) { closeModal(ov.id); });
+      });
+
+      function todayISO() {
+        var d = new Date();
+        var m = String(d.getMonth() + 1).padStart(2, "0");
+        var day = String(d.getDate()).padStart(2, "0");
+        return d.getFullYear() + "-" + m + "-" + day;
+      }
+
+      function formatDisplay(iso) {
+        if (!iso) return "";
+        var parts = iso.split("-");
+        if (parts.length !== 3) return iso;
+        return parts[1] + "/" + parts[2] + "/" + parts[0];
+      }
+
+      function markInvalid(fieldId, invalid) {
+        document.getElementById(fieldId).classList.toggle("invalid", invalid);
+      }
+
+      function setBtnLoading(btn, loading) {
+        btn.classList.toggle("loading", loading);
+        btn.disabled = loading;
+      }
+
+      // =================================================================
+      // ADD APPLICATION
+      // =================================================================
+      var btnOpenAdd = document.getElementById("btnOpenAdd");
+      var formAdd = document.getElementById("formAdd");
+      var inputRole = document.getElementById("input-role");
+      var inputPlatform = document.getElementById("input-platform");
+      var fieldPlatformOther = document.getElementById("field-platform-other");
+      var inputPlatformOther = document.getElementById("input-platform-other");
+      var inputAppliedDate = document.getElementById("input-applied-date");
+      var btnSubmitAdd = document.getElementById("btnSubmitAdd");
+
+      btnOpenAdd.addEventListener("click", function () {
+        formAdd.reset();
+        ["field-role", "field-platform", "field-platform-other", "field-applied-date"].forEach(function (f) {
+          markInvalid(f, false);
+        });
+        fieldPlatformOther.style.display = "none";
+        inputAppliedDate.value = todayISO();
+        inputAppliedDate.max = todayISO();
+        openModal("overlayAdd");
+      });
+
+      inputPlatform.addEventListener("change", function () {
+        fieldPlatformOther.style.display = inputPlatform.value === "Other" ? "block" : "none";
+      });
+
+      formAdd.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        var role = inputRole.value.trim();
+        var platform = inputPlatform.value;
+        var customPlatform = inputPlatformOther.value.trim();
+        var appliedDate = inputAppliedDate.value;
+
+        var valid = true;
+        markInvalid("field-role", !role); if (!role) valid = false;
+        markInvalid("field-platform", !platform); if (!platform) valid = false;
+        if (platform === "Other") {
+          markInvalid("field-platform-other", !customPlatform);
+          if (!customPlatform) valid = false;
+        } else {
+          markInvalid("field-platform-other", false);
+        }
+        markInvalid("field-applied-date", !appliedDate); if (!appliedDate) valid = false;
+        if (!valid) return;
+
+        var finalPlatform = platform === "Other" ? customPlatform : platform;
+
+        setBtnLoading(btnSubmitAdd, true);
+        try {
+          await createApplication({
+            role: role,
+            platform: finalPlatform,
+            appliedDate: appliedDate,
+            status: "Applied",
+            interviewedDate: "",
+            hiredDate: "",
+            createdAt: Date.now()
+          });
+          closeModal("overlayAdd");
+          showToast(role + " added to Applied.", "success");
+        } catch (err) {
+          console.error(err);
+          showToast("Unable to save application. Please try again.", "error");
+        } finally {
+          setBtnLoading(btnSubmitAdd, false);
+        }
+      });
+
+      // =================================================================
+      // MOVE TO INTERVIEWED
+      // =================================================================
+      var btnOpenInterview = document.getElementById("btnOpenInterview");
+      var formInterview = document.getElementById("formInterview");
+      var interviewEmpty = document.getElementById("interviewEmpty");
+      var selIntPlatform = document.getElementById("input-int-platform");
+      var selIntRole = document.getElementById("input-int-role");
+      var inputIntDate = document.getElementById("input-int-date");
+      var btnSubmitInterview = document.getElementById("btnSubmitInterview");
+
+      function populateSelect(select, options, placeholder) {
+        select.innerHTML = "";
+        var ph = document.createElement("option");
+        ph.value = "";
+        ph.disabled = true;
+        ph.selected = true;
+        ph.textContent = placeholder;
+        select.appendChild(ph);
+        options.forEach(function (opt) {
+          var o = document.createElement("option");
+          o.value = opt;
+          o.textContent = opt;
+          select.appendChild(o);
+        });
+      }
+
+      btnOpenInterview.addEventListener("click", function () {
+        formInterview.reset();
+        markInvalid("field-int-platform", false);
+        markInvalid("field-int-role", false);
+        markInvalid("field-int-date", false);
+
+        var appliedApps = byStatus("Applied");
+        var platforms = uniquePlatforms(appliedApps);
+
+        if (platforms.length === 0) {
+          interviewEmpty.style.display = "block";
+          formInterview.style.display = "none";
+        } else {
+          interviewEmpty.style.display = "none";
+          formInterview.style.display = "block";
+          populateSelect(selIntPlatform, platforms, "Select a platform");
+          selIntRole.disabled = true;
+          populateSelect(selIntRole, [], "Select a platform first");
+        }
+
+        inputIntDate.value = todayISO();
+        inputIntDate.max = todayISO();
+        openModal("overlayInterview");
+      });
+
+      selIntPlatform.addEventListener("change", function () {
+        var platform = selIntPlatform.value;
+        var roles = byStatus("Applied")
+          .filter(function (a) { return a.platform === platform; })
+          .map(function (a) { return a.role; });
+        selIntRole.disabled = roles.length === 0;
+        populateSelect(selIntRole, roles, roles.length ? "Select a role" : "No roles available");
+      });
+
+      formInterview.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        var platform = selIntPlatform.value;
+        var role = selIntRole.value;
+        var date = inputIntDate.value;
+
+        var valid = true;
+        markInvalid("field-int-platform", !platform); if (!platform) valid = false;
+        markInvalid("field-int-role", !role); if (!role) valid = false;
+        markInvalid("field-int-date", !date); if (!date) valid = false;
+        if (!valid) return;
+
+        var target = apps.find(function (a) {
+          return a.status === "Applied" && a.platform === platform && a.role === role;
+        });
+        if (!target) {
+          showToast("That application is no longer available.", "error");
+          return;
+        }
+
+        setBtnLoading(btnSubmitInterview, true);
+        try {
+          await updateApplication(target.id, { status: "Interviewed", interviewedDate: date });
+          closeModal("overlayInterview");
+          showToast(role + " moved to Interviewed.", "success");
+        } catch (err) {
+          console.error(err);
+          showToast("Unable to update application. Please try again.", "error");
+        } finally {
+          setBtnLoading(btnSubmitInterview, false);
+        }
+      });
+
+      // =================================================================
+      // MARK AS HIRED
+      // =================================================================
+      var btnOpenHired = document.getElementById("btnOpenHired");
+      var formHired = document.getElementById("formHired");
+      var hiredEmpty = document.getElementById("hiredEmpty");
+      var selHiredPlatform = document.getElementById("input-hired-platform");
+      var selHiredRole = document.getElementById("input-hired-role");
+      var inputHiredDate = document.getElementById("input-hired-date");
+      var btnSubmitHired = document.getElementById("btnSubmitHired");
+
+      btnOpenHired.addEventListener("click", function () {
+        formHired.reset();
+        markInvalid("field-hired-platform", false);
+        markInvalid("field-hired-role", false);
+        markInvalid("field-hired-date", false);
+
+        var interviewedApps = byStatus("Interviewed");
+        var platforms = uniquePlatforms(interviewedApps);
+
+        if (platforms.length === 0) {
+          hiredEmpty.style.display = "block";
+          formHired.style.display = "none";
+        } else {
+          hiredEmpty.style.display = "none";
+          formHired.style.display = "block";
+          populateSelect(selHiredPlatform, platforms, "Select a platform");
+          selHiredRole.disabled = true;
+          populateSelect(selHiredRole, [], "Select a platform first");
+        }
+
+        inputHiredDate.value = todayISO();
+        inputHiredDate.max = todayISO();
+        openModal("overlayHired");
+      });
+
+      selHiredPlatform.addEventListener("change", function () {
+        var platform = selHiredPlatform.value;
+        var roles = byStatus("Interviewed")
+          .filter(function (a) { return a.platform === platform; })
+          .map(function (a) { return a.role; });
+        selHiredRole.disabled = roles.length === 0;
+        populateSelect(selHiredRole, roles, roles.length ? "Select a role" : "No roles available");
+      });
+
+      formHired.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        var platform = selHiredPlatform.value;
+        var role = selHiredRole.value;
+        var date = inputHiredDate.value;
+
+        var valid = true;
+        markInvalid("field-hired-platform", !platform); if (!platform) valid = false;
+        markInvalid("field-hired-role", !role); if (!role) valid = false;
+        markInvalid("field-hired-date", !date); if (!date) valid = false;
+        if (!valid) return;
+
+        var target = apps.find(function (a) {
+          return a.status === "Interviewed" && a.platform === platform && a.role === role;
+        });
+        if (!target) {
+          showToast("That application is no longer available.", "error");
+          return;
+        }
+
+        setBtnLoading(btnSubmitHired, true);
+        try {
+          await updateApplication(target.id, { status: "Hired", hiredDate: date });
+          closeModal("overlayHired");
+          showToast(role + " marked as Hired 🎉", "success");
+        } catch (err) {
+          console.error(err);
+          showToast("Unable to update application. Please try again.", "error");
+        } finally {
+          setBtnLoading(btnSubmitHired, false);
+        }
+      });
+
+      // =================================================================
+      // MANAGE ENTRIES (reset all / remove one by one)
+      // =================================================================
+      var btnOpenManage = document.getElementById("btnOpenManage");
+      var btnResetAll = document.getElementById("btnResetAll");
+      var resetHint = document.getElementById("resetHint");
+      var manageList = document.getElementById("manageList");
+      var manageEmpty = document.getElementById("manageEmpty");
+      var resetConfirmTimer = null;
+      var resetConfirming = false;
+
+      function resetConfirmState(confirming) {
+        resetConfirming = confirming;
+        btnResetAll.classList.toggle("confirming", confirming);
+        btnResetAll.textContent = confirming ? "Tap again to delete everything" : "Reset all applications";
+        resetHint.textContent = confirming
+          ? "This can't be undone. Tap the button again within 5 seconds to confirm."
+          : "This permanently deletes every Applied, Interviewed, and Hired entry.";
+        clearTimeout(resetConfirmTimer);
+        if (confirming) {
+          resetConfirmTimer = setTimeout(function () { resetConfirmState(false); }, 5000);
+        }
+      }
+
+      function renderManageList() {
+        manageList.innerHTML = "";
+        if (apps.length === 0) {
+          manageEmpty.style.display = "block";
+          manageList.style.display = "none";
+          btnResetAll.disabled = true;
+          return;
+        }
+        manageEmpty.style.display = "none";
+        manageList.style.display = "flex";
+        btnResetAll.disabled = false;
+
+        var ordered = apps.slice().sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+        ordered.forEach(function (a) {
+          var row = document.createElement("div");
+          row.className = "manage-entry";
+          row.innerHTML =
+            '<div class="entry-info">' +
+            '<div class="entry-role"></div>' +
+            '<div class="entry-meta">' +
+            '<span class="entry-platform"></span>' +
+            '<span class="status-pill" data-status="' + a.status + '">' + a.status + '</span>' +
+            '</div>' +
+            '</div>' +
+            '<button class="entry-delete" aria-label="Remove ' + (a.role || "application").replace(/"/g, "") + '" data-id="' + a.id + '">✕</button>';
+          row.querySelector(".entry-role").textContent = a.role || "Untitled role";
+          row.querySelector(".entry-platform").textContent = a.platform || "—";
+          manageList.appendChild(row);
+        });
+      }
+
+      btnOpenManage.addEventListener("click", function () {
+        resetConfirmState(false);
+        renderManageList();
+        openModal("overlayManage");
+      });
+
+      btnResetAll.addEventListener("click", async function () {
+        if (!resetConfirming) {
+          resetConfirmState(true);
+          return;
+        }
+        clearTimeout(resetConfirmTimer);
+        resetConfirmState(false);
+        btnResetAll.disabled = true;
+        try {
+          await resetAllApplications();
+          showToast("All applications were removed.", "success");
+          renderManageList();
+        } catch (err) {
+          console.error(err);
+          showToast("Unable to reset applications. Please try again.", "error");
+        } finally {
+          btnResetAll.disabled = apps.length === 0;
+        }
+      });
+
+      manageList.addEventListener("click", async function (e) {
+        var btn = e.target.closest(".entry-delete");
+        if (!btn) return;
+        var id = btn.getAttribute("data-id");
+        var app = apps.find(function (a) { return a.id === id; });
+        btn.disabled = true;
+        try {
+          await deleteApplication(id);
+          showToast((app ? app.role : "Application") + " removed.", "success");
+          renderManageList();
+        } catch (err) {
+          console.error(err);
+          showToast("Unable to remove that entry. Please try again.", "error");
+          btn.disabled = false;
+        }
+      });
+
+      document.getElementById("overlayManage").addEventListener("transitionend", function (e) {
+        if (e.target.id === "overlayManage" && !this.classList.contains("open")) {
+          resetConfirmState(false);
+        }
+      });
+
+      // =================================================================
+      // EXPORT (spreadsheet-style CSV matching the tracked columns)
+      // =================================================================
+      document.getElementById("btnExport").addEventListener("click", async function () {
+        if (apps.length === 0) {
+          showToast("No applications to export yet.", "error");
+          return;
+        }
+        var rows = [["APPLIED DATE", "ROLE", "PLATFORM", "STATUS", "INTERVIEWED DATE", "HIRED DATE"]];
+        apps.forEach(function (a) {
+          rows.push([
+            formatDisplay(a.appliedDate),
+            a.role || "",
+            a.platform || "",
+            a.status || "",
+            formatDisplay(a.interviewedDate),
+            formatDisplay(a.hiredDate)
+          ]);
+        });
+        var csv = rows.map(function (r) {
+          return r.map(function (cell) {
+            var s = String(cell).replace(/"/g, '""');
+            return /[",\n]/.test(s) ? '"' + s + '"' : s;
+          }).join(",");
+        }).join("\n");
+
+        try {
+          var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          var url = URL.createObjectURL(blob);
+          var link = document.createElement("a");
+          link.href = url;
+          link.download = "applications.csv";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+          showToast("Spreadsheet ready to import into Google Sheets.", "success");
+        } catch (err) {
+          console.error(err);
+          showToast("Couldn't start the download. Please try again.", "error");
+        }
+      });
+
+      // ---------------------------------------------------------------
+      initData();
+    })();
+  </script>
+</body>
+
+</html>
